@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>GPS轨迹地图</title>
+    <style>
+        * { margin: 0; padding: 0; }
+        html, body, #container { width: 100%; height: 100%; }
+        #info {
+            position: absolute;
+            bottom: 10px;
+            left: 10px;
+            background: rgba(255,255,255,0.9);
+            padding: 8px 12px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-family: sans-serif;
+            z-index: 999;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div id="container"></div>
+    <div id="info"></div>
+
+    <!-- 高德地图 JavaScript API 2.0 -->
+    <!-- 请替换下面的 key 为你自己申请的 Web端(JS API) Key -->
+    <script src="https://webapi.amap.com/maps?v=2.0&key=YOUR_AMAP_JS_KEY"></script>
+
+    <script>
+        var map = new AMap.Map('container', {
+            zoom: 13,
+            center: [121.4737, 31.2304],  // 默认中心：上海
+            mapStyle: 'amap://styles/normal'
+        });
+
+        var currentPolyline = null;
+        var startMarker = null;
+        var endMarker = null;
+
+        /**
+         * 绘制轨迹路线
+         * @param {Array} coords - 坐标数组 [[lng, lat], [lng, lat], ...]
+         */
+        function drawTrack(coords) {
+            // 清除之前的轨迹
+            clearTrack();
+
+            if (!coords || coords.length === 0) return;
+
+            // 绘制轨迹折线
+            currentPolyline = new AMap.Polyline({
+                path: coords,
+                strokeColor: '#2196F3',
+                strokeWeight: 6,
+                strokeOpacity: 0.8,
+                lineJoin: 'round',
+                lineCap: 'round',
+                showDir: true,
+            });
+            map.add(currentPolyline);
+
+            // 标记起点
+            startMarker = new AMap.Marker({
+                position: coords[0],
+                title: '起点',
+                label: {
+                    content: '起点',
+                    direction: 'top',
+                },
+                icon: new AMap.Icon({
+                    size: new AMap.Size(25, 34),
+                    image: 'https://webapi.amap.com/theme/v1.3/markers/n/start.png',
+                }),
+            });
+            map.add(startMarker);
+
+            // 标记终点
+            if (coords.length > 1) {
+                endMarker = new AMap.Marker({
+                    position: coords[coords.length - 1],
+                    title: '终点',
+                    label: {
+                        content: '终点',
+                        direction: 'top',
+                    },
+                    icon: new AMap.Icon({
+                        size: new AMap.Size(25, 34),
+                        image: 'https://webapi.amap.com/theme/v1.3/markers/n/end.png',
+                    }),
+                });
+                map.add(endMarker);
+            }
+
+            // 自动调整视野以显示完整轨迹
+            map.setFitView([currentPolyline, startMarker, endMarker], false, [50, 50, 50, 50]);
+
+            // 显示信息
+            var info = document.getElementById('info');
+            var distance = calculateDistance(coords);
+            info.style.display = 'block';
+            info.innerHTML = coords.length + ' 个轨迹点 · ' + distance.toFixed(1) + ' km';
+        }
+
+        /**
+         * 清除地图上的轨迹
+         */
+        function clearTrack() {
+            if (currentPolyline) {
+                map.remove(currentPolyline);
+                currentPolyline = null;
+            }
+            if (startMarker) {
+                map.remove(startMarker);
+                startMarker = null;
+            }
+            if (endMarker) {
+                map.remove(endMarker);
+                endMarker = null;
+            }
+            document.getElementById('info').style.display = 'none';
+        }
+
+        /**
+         * 计算轨迹总距离（公里）
+         * @param {Array} coords - 坐标数组
+         * @returns {number} 距离（公里）
+         */
+        function calculateDistance(coords) {
+            var total = 0;
+            for (var i = 1; i < coords.length; i++) {
+                total += AMap.GeometryUtil.distance(coords[i-1], coords[i]);
+            }
+            return total / 1000;
+        }
+
+        /**
+         * 添加当前位置标记
+         * @param {number} lng - 经度
+         * @param {number} lat - 纬度
+         */
+        function updateCurrentPosition(lng, lat) {
+            if (window.currentPosMarker) {
+                window.currentPosMarker.setPosition([lng, lat]);
+            } else {
+                window.currentPosMarker = new AMap.Marker({
+                    position: [lng, lat],
+                    title: '当前位置',
+                    icon: new AMap.Icon({
+                        size: new AMap.Size(24, 24),
+                        image: 'data:image/svg+xml,' + encodeURIComponent(
+                            '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24">' +
+                            '<circle cx="12" cy="12" r="10" fill="#2196F3" stroke="white" stroke-width="3"/>' +
+                            '</svg>'
+                        ),
+                    }),
+                    anchor: 'center',
+                });
+                map.add(window.currentPosMarker);
+            }
+            map.setCenter([lng, lat]);
+        }
+    </script>
+</body>
+</html>
