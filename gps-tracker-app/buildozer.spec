@@ -8,21 +8,17 @@ source.dir = .
 source.include_exts = py,png,jpg,kv,atlas,html,json
 version = 1.0.0
 
-# Python依赖
-requirements = python3,kivy==2.3.0,kivymd==1.2.0,plyer,android,pyjnius,pycryptodome
-
-# 图标（如有）
-# icon.filename = %(source.dir)s/assets/icon.png
-# presplash.filename = %(source.dir)s/assets/presplash.png
+# Python依赖（不锁定版本，让buildozer自动选择兼容版本）
+requirements = python3,kivy,kivymd,plyer,android,pyjnius
 
 # 全屏模式
 fullscreen = 0
 
-# 屏幕方向：portrait=竖屏，landscape=横屏，sensorLandscape=传感器横屏
+# 屏幕方向
 orientation = portrait
 
 # Android权限
-android.permissions = ACCESS_FINE_LOCATION,ACCESS_COARSE_LOCATION,FOREGROUND_SERVICE,INTERNET,ACCESS_NETWORK_STATE,WRITE_EXTERNAL_STORAGE,READ_EXTERNAL_STORAGE
+android.permissions = ACCESS_FINE_LOCATION,ACCESS_COARSE_LOCATION,FOREGROUND_SERVICE,INTERNET,ACCESS_NETWORK_STATE
 
 # Android API版本
 android.api = 33
@@ -32,31 +28,18 @@ android.ndk = 25b
 # 目标架构
 android.archs = arm64-v8a
 
-# 后台服务
-android.services = GPSService:services/gps_service.py:foreground
-
-# Gradle依赖（用于前台服务通知）
-# android.gradle_dependencies = 'com.google.android.gms:play-services-location:21.0.1'
-
-# 入口文件
-# entry.main = main.py:main
-
 # 包含的额外文件
 source.include_patterns = assets/*,screens/*,core/*
 
-# 日志级别
-log_level = 2
-
-# P4A (python-for-android) recipe
-p4a.branch = develop
+# 使用稳定的p4a分支
+p4a.branch = master
 
 # 自动接受SDK许可
 android.accept_sdk_license = True
 
-[buildozer]
-
-# Buildozer日志级别 (0=quiet, 1=error, 2=info, 3=debug, 4=verbose)
+# 日志级别
 log_level = 2
 
-# 警告处理
+[buildozer]
+log_level = 2
 warn_on_root = 0
