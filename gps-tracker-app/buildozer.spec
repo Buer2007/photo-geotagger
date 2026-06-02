@@ -37,12 +37,6 @@ p4a.branch = master
 # 自动接受SDK许可
 android.accept_sdk_license = True
 
-# Gradle配置（适配Android 14+前台服务）
-android.gradle_dependencies = 'com.google.android.gms:play-services-location:21.0.1'
-
-# 入口文件
-# entry.main = main.py:main
-
 # 日志级别
 log_level = 2
 
