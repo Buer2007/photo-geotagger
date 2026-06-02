@@ -1,0 +1,25 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+*.egg-info/
+*.egg
+
+# Build
+build/
+dist/
+*.spec
+
+# Kivy
+*.kv~
+*.py~
+.kivy/
+.buildozer/
+
+# Data
+gps-tracker-app/data/
+
+# OS
+.DS_Store
+Thumbs.db
