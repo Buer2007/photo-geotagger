@@ -10,6 +10,8 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
 
     steps:
     - uses: actions/checkout@v4
@@ -32,8 +34,36 @@ jobs:
       env:
         BUILDOZER_WARN_ON_ROOT: 0
 
-    - name: Upload APK
+    - name: Upload APK artifact
       uses: actions/upload-artifact@v4
       with:
         name: gps-tracker-apk
         path: gps-tracker-app/bin/*.apk
+
+    - name: Get version
+      id: version
+      run: echo "version=$(date +%Y%m%d-%H%M%S)" >> $GITHUB_OUTPUT
+
+    - name: Create Release
+      uses: softprops/action-gh-release@v2
+      with:
+        tag_name: v${{ steps.version.outputs.version }}
+        name: GPS轨迹记录器 v${{ steps.version.outputs.version }}
+        body: |
+          ## GPS轨迹记录器 Android App
+
+          ### 功能
+          - GPS轨迹记录（后台持续运行）
+          - 高德地图轨迹显示
+          - 历史轨迹管理
+          - GPX文件导出
+
+          ### 安装方法
+          1. 下载下方的 `.apk` 文件
+          2. 传到安卓手机
+          3. 打开安装（允许未知来源）
+        files: gps-tracker-app/bin/*.apk
+        draft: false
+        prerelease: false
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
