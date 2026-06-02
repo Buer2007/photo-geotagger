@@ -9,25 +9,41 @@ APP_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, APP_DIR)
 
 from kivy.core.text import LabelBase
+from kivy.resources import resource_add_path
 
-# 注册中文字体
+# 添加资源路径（Android兼容）
+resource_add_path(APP_DIR)
+resource_add_path(os.path.join(APP_DIR, 'assets'))
+
+# 注册中文字体（Android兼容路径）
 FONT_PATH = os.path.join(APP_DIR, 'assets', 'simhei.ttf')
+
+# 如果字体文件不存在（Android打包后可能在不同位置），尝试其他路径
+if not os.path.exists(FONT_PATH):
+    # Android上 assets 可能在 app 目录下
+    alt_paths = [
+        os.path.join(os.path.dirname(APP_DIR), 'assets', 'simhei.ttf'),
+        os.path.join(APP_DIR, 'simhei.ttf'),
+        'assets/simhei.ttf',
+        'simhei.ttf',
+    ]
+    for p in alt_paths:
+        if os.path.exists(p):
+            FONT_PATH = p
+            break
+
 LabelBase.register(name='SimHei', fn_regular=FONT_PATH)
 
 from kivy.clock import Clock
 from kivymd.app import MDApp
 from kivymd.uix.boxlayout import MDBoxLayout
 from kivymd.uix.bottomnavigation import MDBottomNavigation, MDBottomNavigationItem
-from kivymd.font_definitions import fonts, theme_font_styles
+from kivymd.font_definitions import fonts
 
 from core.gps_service import GPSService
 from core.track_manager import TrackManager
 
-# ============================================================
-# 关键：替换 KivyMD 的字体系统，把所有 Roboto 改为 SimHei
-# ============================================================
-
-# 1. 替换 fonts 列表中所有字体为 SimHei
+# 替换 KivyMD 字体系统
 for font_item in fonts:
     font_item['name'] = 'SimHei'
     font_item['fn_regular'] = FONT_PATH
@@ -39,12 +55,9 @@ for font_item in fonts:
     if 'fn_light' in font_item:
         font_item['fn_light'] = FONT_PATH
 
-# 2. 重新注册所有 KivyMD 字体名称指向 SimHei 文件
 for name in ['Roboto', 'RobotoMono', 'RobotoMonoLight', 'RobotoThin', 'RobotoLight',
-             'RobotoMedium', 'RobotoBlack', 'RobotoSlab']:
+             'RobotoMedium', 'RobotoBlack', 'RobotoSlab', 'Icons']:
     LabelBase.register(name=name, fn_regular=FONT_PATH)
-
-LabelBase.register(name='Icons', fn_regular=os.path.join(APP_DIR, 'assets', 'simhei.ttf'))
 
 
 class GPSTrackerApp(MDApp):
@@ -55,7 +68,6 @@ class GPSTrackerApp(MDApp):
         self.theme_cls.primary_palette = 'Blue'
         self.theme_cls.theme_style = 'Light'
 
-        # 3. 替换 theme_cls 中的 font_styles
         for style_name in list(self.theme_cls.font_styles.keys()):
             self.theme_cls.font_styles[style_name] = [FONT_PATH, 16, 0, False]
 

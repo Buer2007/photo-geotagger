@@ -5,10 +5,10 @@ title = GPS轨迹记录器
 package.name = gpstracker
 package.domain = com.geotagger
 source.dir = .
-source.include_exts = py,png,jpg,kv,atlas,html,json
+source.include_exts = py,png,jpg,kv,atlas,html,json,ttf
 version = 1.0.0
 
-# Python依赖（不锁定版本，让buildozer自动选择兼容版本）
+# Python依赖
 requirements = python3,kivy,kivymd,plyer,android,pyjnius
 
 # 全屏模式
@@ -17,18 +17,18 @@ fullscreen = 0
 # 屏幕方向
 orientation = portrait
 
-# Android权限
-android.permissions = ACCESS_FINE_LOCATION,ACCESS_COARSE_LOCATION,FOREGROUND_SERVICE,INTERNET,ACCESS_NETWORK_STATE
+# Android权限（适配Android 14+）
+android.permissions = ACCESS_FINE_LOCATION,ACCESS_COARSE_LOCATION,FOREGROUND_SERVICE,FOREGROUND_SERVICE_LOCATION,INTERNET,ACCESS_NETWORK_STATE,POST_NOTIFICATIONS
 
-# Android API版本
-android.api = 33
+# Android API版本（适配Android 16）
+android.api = 35
 android.minapi = 26
 android.ndk = 25b
 
 # 目标架构
 android.archs = arm64-v8a
 
-# 包含的额外文件
+# 包含的额外文件（确保字体被打包）
 source.include_patterns = assets/*,screens/*,core/*
 
 # 使用稳定的p4a分支
@@ -36,6 +36,12 @@ p4a.branch = master
 
 # 自动接受SDK许可
 android.accept_sdk_license = True
+
+# Gradle配置（适配Android 14+前台服务）
+android.gradle_dependencies = 'com.google.android.gms:play-services-location:21.0.1'
+
+# 入口文件
+# entry.main = main.py:main
 
 # 日志级别
 log_level = 2
