@@ -45,20 +45,21 @@ class MapScreen(BoxLayout):
         except ImportError:
             self._webview_available = False
 
-        # PC上显示提示和浏览器按钮
+        # 没有WebView时的提示
         if not self._webview_available:
             content = MDBoxLayout(orientation='vertical', padding='32dp', spacing='16dp', size_hint_y=1)
 
             content.add_widget(MDLabel(
-                text='[b]PC测试模式[/b]\n\nWebView组件仅在Android上可用。\n请点击下方按钮在浏览器中查看地图。',
+                text='[b]地图功能[/b]\n\n'
+                     'Android手机上请使用WebView版本。\n'
+                     'PC测试时地图功能暂不可用。',
                 markup=True, font_style='Body1', halign='center', size_hint_y=0.4, font_name=FONT,
             ))
 
-            open_btn = MDRaisedButton(text='在浏览器中打开地图', size_hint=(0.6, None), height='48dp', pos_hint={'center_x': 0.5}, font_name=FONT)
-            open_btn.bind(on_press=self._open_in_browser)
-            content.add_widget(open_btn)
-
-            self.browser_info_label = MDLabel(text='暂无轨迹数据', font_style='Body2', halign='center', size_hint_y=0.4, font_name=FONT)
+            self.browser_info_label = MDLabel(
+                text='暂无轨迹数据',
+                font_style='Body2', halign='center', size_hint_y=0.4, font_name=FONT,
+            )
             content.add_widget(self.browser_info_label)
             self.add_widget(content)
         else:
@@ -87,32 +88,16 @@ class MapScreen(BoxLayout):
         coords = [[p['longitude'], p['latitude']] for p in points]
 
         if self._webview_available and self.webview:
+            # Android: 通过 WebView 显示
             js_code = f'drawTrack({json.dumps(coords)})'
             try:
                 self.webview.evaluate_js(js_code)
             except Exception as e:
                 print(f"WebView JS执行失败: {e}")
         else:
+            # PC: 显示提示
             if self.browser_info_label:
                 self.browser_info_label.text = f'已加载轨迹: {name}\n{point_count} 点 · {distance/1000:.1f} km'
-            self._current_coords = coords
-
-    def _open_in_browser(self, instance):
-        import webbrowser
-        map_html = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'assets', 'map.html')
-
-        if hasattr(self, '_current_coords') and self._current_coords:
-            coords_json = json.dumps(self._current_coords)
-            with open(map_html, 'r', encoding='utf-8') as f:
-                html_content = f.read()
-            inject_js = f'\n<script>drawTrack({coords_json});</script>\n</body>'
-            html_content = html_content.replace('</body>', inject_js)
-            tmp_path = os.path.join(tempfile.gettempdir(), 'gps_track_map.html')
-            with open(tmp_path, 'w', encoding='utf-8') as f:
-                f.write(html_content)
-            webbrowser.open(f'file:///{tmp_path}')
-        else:
-            webbrowser.open(f'file:///{map_html}')
 
     def show_current_track(self):
         points = self.app.gps_service.current_track

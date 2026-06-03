@@ -3,6 +3,7 @@ home_screen.py — 主界面（GPS记录控制）
 """
 
 import os
+from datetime import datetime
 from kivy.clock import Clock
 from kivy.uix.boxlayout import BoxLayout
 
@@ -17,7 +18,7 @@ class HomeScreen(BoxLayout):
         self.app = app
         self.orientation = 'vertical'
         self._update_event = None
-        self._recording_seconds = 0
+        self._start_time = None
         self._build_ui()
 
     def _build_ui(self):
@@ -80,41 +81,40 @@ class HomeScreen(BoxLayout):
             self._start_recording()
 
     def _start_recording(self):
-        """开始记录（计时器和GPS独立运行）"""
-        # 重置本地计时
-        self._recording_seconds = 0
+        """开始记录"""
+        # 记录开始时间（系统时间）
+        self._start_time = datetime.now()
 
-        # 启动GPS（可能在Windows上失败，不影响计时器）
+        # 启动GPS
         try:
             self.app.gps_service.on_location_update = self._on_location
             self.app.gps_service.start_recording()
         except Exception as e:
             print(f"GPS启动失败（不影响计时）: {e}")
 
-        # 更新UI状态
+        # 更新UI
         self.status_label.text = '● 记录中...'
         self.status_label.text_color = [0.2, 0.8, 0.2, 1]
         self.record_btn.text = '■ 停止记录'
         self.record_btn.md_bg_color = [0.9, 0.2, 0.2, 1]
         self.save_btn.disabled = True
 
-        # 启动计时器（每秒更新）
+        # 启动定时器（每秒读取系统时间更新显示）
         self._update_event = Clock.schedule_interval(self._update_display, 1.0)
+        self._update_display(0)  # 立即更新一次
 
     def _stop_recording(self):
         """停止记录"""
-        # 停止GPS
         try:
             self.app.gps_service.stop_recording()
         except Exception:
             pass
 
-        # 停止计时器
         if self._update_event:
             self._update_event.cancel()
             self._update_event = None
 
-        # 更新UI
+        self._start_time = None
         self.status_label.text = '已停止 - 请保存轨迹'
         self.status_label.text_color = [0, 0, 0, 1]
         self.record_btn.text = '● 开始记录'
@@ -124,7 +124,6 @@ class HomeScreen(BoxLayout):
     def _save_track(self, instance):
         points = self.app.gps_service.current_track
         if not points:
-            # 没有GPS点时也允许保存（PC测试用）
             self.status_label.text = '无轨迹数据可保存'
             return
 
@@ -143,19 +142,19 @@ class HomeScreen(BoxLayout):
             self.save_btn.disabled = True
 
     def _on_location(self, point):
-        """GPS位置更新回调"""
         pass
 
     def _update_display(self, dt):
-        """每秒更新显示（计时器独立于GPS）"""
-        # 本地计时（不依赖GPS服务）
-        self._recording_seconds += 1
-        h = self._recording_seconds // 3600
-        m = (self._recording_seconds % 3600) // 60
-        s = self._recording_seconds % 60
-        self.duration_label.text = f'{h:02d}:{m:02d}:{s:02d}'
+        """每秒更新：从系统时间计算已录制时长"""
+        # 计时：直接用当前系统时间减去开始时间
+        if self._start_time:
+            elapsed = (datetime.now() - self._start_time).total_seconds()
+            h = int(elapsed) // 3600
+            m = (int(elapsed) % 3600) // 60
+            s = int(elapsed) % 60
+            self.duration_label.text = f'{h:02d}:{m:02d}:{s:02d}'
 
-        # GPS数据（如果有）
+        # GPS数据
         stats = self.app.gps_service.get_current_stats()
 
         if stats['distance'] > 0:

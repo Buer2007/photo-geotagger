@@ -22,7 +22,15 @@ class TrackManager:
             base_dir: 数据存储根目录（默认使用应用目录下的 data/）
         """
         if base_dir is None:
-            base_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'data')
+            # Android兼容：优先使用应用私有目录
+            try:
+                from jnius import autoclass
+                PythonActivity = autoclass('org.kivy.android.PythonActivity')
+                context = PythonActivity.mActivity
+                files_dir = context.getFilesDir().getAbsolutePath()
+                base_dir = os.path.join(files_dir, 'geotagger_data')
+            except Exception:
+                base_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'data')
 
         self.base_dir = base_dir
         self.tracks_dir = os.path.join(base_dir, 'tracks')

@@ -72,7 +72,18 @@ class GPSTrackerApp(MDApp):
             self.theme_cls.font_styles[style_name] = [FONT_PATH, 16, 0, False]
 
         self.gps_service = GPSService()
-        self.track_manager = TrackManager(base_dir=os.path.join(APP_DIR, 'data'))
+
+        # 数据目录：Android上使用应用私有目录，PC上使用项目目录
+        try:
+            from jnius import autoclass
+            PythonActivity = autoclass('org.kivy.android.PythonActivity')
+            context = PythonActivity.mActivity
+            files_dir = context.getFilesDir().getAbsolutePath()
+            data_dir = os.path.join(files_dir, 'geotagger_data')
+        except Exception:
+            data_dir = os.path.join(APP_DIR, 'data')
+
+        self.track_manager = TrackManager(base_dir=data_dir)
 
         self.home_screen = None
         self.map_screen = None
