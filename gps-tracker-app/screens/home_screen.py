@@ -52,13 +52,13 @@ class HomeScreen(BoxLayout):
         # GPS信息卡片
         info_card = MDCard(orientation='vertical', size_hint_y=None, height='160dp', padding='16dp', elevation=2, radius=[12])
         self.time_label = MDLabel(text='时间: --:--:--', font_style='H5', halign='center', font_name=FONT, theme_text_color='Custom', text_color=[0.2, 0.6, 1, 1])
+        self.date_label = MDLabel(text='日期: ----/--/--', font_style='Body1', halign='center', font_name=FONT)
         self.lat_label = MDLabel(text='纬度: --', font_style='Body1', font_name=FONT)
         self.lon_label = MDLabel(text='经度: --', font_style='Body1', font_name=FONT)
-        self.alt_label = MDLabel(text='海拔: --', font_style='Body1', font_name=FONT)
         info_card.add_widget(self.time_label)
+        info_card.add_widget(self.date_label)
         info_card.add_widget(self.lat_label)
         info_card.add_widget(self.lon_label)
-        info_card.add_widget(self.alt_label)
         self.add_widget(info_card)
 
         self.add_widget(Widget(size_hint_y=1))
