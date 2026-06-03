@@ -1,13 +1,12 @@
 """
 map_screen.py — 地图轨迹显示界面
 
-Android: 使用 WebView 加载高德地图
-PC测试: 用浏览器打开地图
+Android: 使用 Android WebView 加载高德地图
+PC: 显示提示信息
 """
 
 import os
 import json
-import tempfile
 from kivy.uix.boxlayout import BoxLayout
 
 FONT = 'SimHei'
@@ -27,7 +26,7 @@ class MapScreen(BoxLayout):
     def _build_ui(self):
         from kivymd.uix.boxlayout import MDBoxLayout
         from kivymd.uix.label import MDLabel
-        from kivymd.uix.button import MDIconButton, MDRaisedButton
+        from kivymd.uix.button import MDIconButton
 
         # 顶部标题栏
         header = MDBoxLayout(orientation='horizontal', size_hint_y=None, height='56dp', padding=['8dp', '8dp'])
@@ -35,69 +34,75 @@ class MapScreen(BoxLayout):
         header.add_widget(MDLabel(text='轨迹地图', font_style='H6', size_hint_x=0.8, font_name=FONT))
         self.add_widget(header)
 
-        # 尝试加载 WebView（Android可用，PC上不可用）
+        # 尝试加载 WebView
         try:
             from kivy_garden.webview import WebView
-            map_html = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'assets', 'map.html')
-            self.webview = WebView(url=map_html, size_hint_y=1)
-            self.add_widget(self.webview)
-            self._webview_available = True
+
+            # 找到 map.html 文件
+            map_html = self._find_map_html()
+            if map_html:
+                self.webview = WebView(url=map_html, size_hint_y=1)
+                self.add_widget(self.webview)
+                self._webview_available = True
+            else:
+                self._show_fallback('地图文件未找到')
         except ImportError:
-            self._webview_available = False
+            self._show_fallback('WebView组件未安装\n\nAndroid上请确保已安装kivy-garden-webview')
+        except Exception as e:
+            self._show_fallback(f'WebView加载失败: {e}')
 
-        # 没有WebView时的提示
-        if not self._webview_available:
-            content = MDBoxLayout(orientation='vertical', padding='32dp', spacing='16dp', size_hint_y=1)
+    def _find_map_html(self):
+        """查找 map.html 文件"""
+        # 可能的路径
+        possible_paths = [
+            os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'assets', 'map.html'),
+            os.path.join(os.path.dirname(os.path.abspath(__file__)), 'map.html'),
+            'assets/map.html',
+            'map.html',
+        ]
 
-            content.add_widget(MDLabel(
-                text='[b]地图功能[/b]\n\n'
-                     'Android手机上请使用WebView版本。\n'
-                     'PC测试时地图功能暂不可用。',
-                markup=True, font_style='Body1', halign='center', size_hint_y=0.4, font_name=FONT,
-            ))
+        # Android 打包后的路径
+        try:
+            from jnius import autoclass
+            PythonActivity = autoclass('org.kivy.android.PythonActivity')
+            context = PythonActivity.mActivity
+            app_dir = context.getFilesDir().getAbsolutePath()
+            possible_paths.insert(0, os.path.join(app_dir, 'assets', 'map.html'))
+        except Exception:
+            pass
 
-            self.browser_info_label = MDLabel(
-                text='暂无轨迹数据',
-                font_style='Body2', halign='center', size_hint_y=0.4, font_name=FONT,
-            )
-            content.add_widget(self.browser_info_label)
-            self.add_widget(content)
-        else:
-            self.browser_info_label = None
+        for path in possible_paths:
+            if os.path.exists(path):
+                return path
 
-        # 底部信息栏
-        footer = MDBoxLayout(orientation='vertical', size_hint_y=None, height='80dp', padding='16dp')
-        self.track_info_label = MDLabel(text='暂无轨迹', font_style='Body1', halign='center', font_name=FONT)
-        self.track_stats_label = MDLabel(text='', font_style='Body2', halign='center', theme_text_color='Secondary', font_name=FONT)
-        footer.add_widget(self.track_info_label)
-        footer.add_widget(self.track_stats_label)
-        self.add_widget(footer)
+        return None
+
+    def _show_fallback(self, message):
+        """显示备用提示"""
+        from kivymd.uix.label import MDLabel
+
+        self._webview_available = False
+        self.add_widget(MDLabel(
+            text=message,
+            font_style='Body1',
+            halign='center',
+            font_name=FONT,
+            size_hint_y=1,
+        ))
 
     def show_track(self, track_data):
         if not track_data or not track_data.get('points'):
             return
 
         points = track_data['points']
-        name = track_data.get('name', '未知轨迹')
-        distance = track_data.get('distance', 0)
-        point_count = len(points)
-
-        self.track_info_label.text = f'轨迹: {name}'
-        self.track_stats_label.text = f'{point_count} 点 · {distance/1000:.1f} km'
-
         coords = [[p['longitude'], p['latitude']] for p in points]
 
         if self._webview_available and self.webview:
-            # Android: 通过 WebView 显示
             js_code = f'drawTrack({json.dumps(coords)})'
             try:
                 self.webview.evaluate_js(js_code)
             except Exception as e:
                 print(f"WebView JS执行失败: {e}")
-        else:
-            # PC: 显示提示
-            if self.browser_info_label:
-                self.browser_info_label.text = f'已加载轨迹: {name}\n{point_count} 点 · {distance/1000:.1f} km'
 
     def show_current_track(self):
         points = self.app.gps_service.current_track

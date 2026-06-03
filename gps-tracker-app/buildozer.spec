@@ -28,8 +28,8 @@ android.ndk = 25b
 # 目标架构
 android.archs = arm64-v8a
 
-# 包含的额外文件（确保字体被打包）
-source.include_patterns = assets/*,screens/*,core/*
+# 包含的额外文件
+source.include_patterns = assets/*,screens/*,core/*,*.html,*.ttf
 
 # 使用稳定的p4a分支
 p4a.branch = master

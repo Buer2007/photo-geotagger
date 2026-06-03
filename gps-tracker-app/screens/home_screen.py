@@ -51,12 +51,14 @@ class HomeScreen(BoxLayout):
 
         # GPS信息卡片
         info_card = MDCard(orientation='vertical', size_hint_y=None, height='160dp', padding='16dp', elevation=2, radius=[12])
+        self.time_label = MDLabel(text='时间: --:--:--', font_style='H5', halign='center', font_name=FONT, theme_text_color='Custom', text_color=[0.2, 0.6, 1, 1])
         self.lat_label = MDLabel(text='纬度: --', font_style='Body1', font_name=FONT)
         self.lon_label = MDLabel(text='经度: --', font_style='Body1', font_name=FONT)
         self.alt_label = MDLabel(text='海拔: --', font_style='Body1', font_name=FONT)
-        self.acc_label = MDLabel(text='精度: --', font_style='Body1', font_name=FONT)
-        for w in [self.lat_label, self.lon_label, self.alt_label, self.acc_label]:
-            info_card.add_widget(w)
+        info_card.add_widget(self.time_label)
+        info_card.add_widget(self.lat_label)
+        info_card.add_widget(self.lon_label)
+        info_card.add_widget(self.alt_label)
         self.add_widget(info_card)
 
         self.add_widget(Widget(size_hint_y=1))
@@ -145,14 +147,11 @@ class HomeScreen(BoxLayout):
         pass
 
     def _update_display(self, dt):
-        """每秒更新：从系统时间计算已录制时长"""
-        # 计时：直接用当前系统时间减去开始时间
-        if self._start_time:
-            elapsed = (datetime.now() - self._start_time).total_seconds()
-            h = int(elapsed) // 3600
-            m = (int(elapsed) % 3600) // 60
-            s = int(elapsed) % 60
-            self.duration_label.text = f'{h:02d}:{m:02d}:{s:02d}'
+        """每秒更新"""
+        # 系统时间（精确到秒）
+        now = datetime.now()
+        self.time_label.text = now.strftime('时间: %H:%M:%S')
+        self.duration_label.text = now.strftime('%H:%M:%S')
 
         # GPS数据
         stats = self.app.gps_service.get_current_stats()
@@ -167,4 +166,3 @@ class HomeScreen(BoxLayout):
             self.lat_label.text = f'纬度: {stats["current_lat"]:.6f}°'
             self.lon_label.text = f'经度: {stats["current_lon"]:.6f}°'
             self.alt_label.text = f'海拔: {stats["current_alt"]:.1f} m'
-            self.acc_label.text = f'精度: {stats["current_accuracy"]:.1f} m'
